@@ -131,7 +131,7 @@ namespace Chromastein
 
         private void LoadTextures()
         {
-            Texture allWalls = new Texture(ContentPath + "walls.png");
+            Texture allWalls = new Texture(ContentPath + "walls.jpeg");
             int Columns = (int)allWalls.Width / TextureSize;
             int Rows = (int)allWalls.Height / TextureSize;
             // cookie undid his stupid! :D
