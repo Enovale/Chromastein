@@ -167,6 +167,7 @@ namespace Chromastein
             Strip[] wallStripsToRender;
             wallStripsToRender = new Strip[ScreenWidth / ScreenWidthDivision + 1];
             List<Object> spritesToDraw = new List<Object>();
+            List<bool> spritesDrawn = new List<bool>();
 
             for (int x = 0; x <= ScreenWidth; x += ScreenWidthDivision)
             {
@@ -236,8 +237,9 @@ namespace Chromastein
                         side = 1;
                     }
 
-                    if (mapX >= WorldMap.GetLength(0) || mapY >= WorldMap.GetLength(1)) break;
-                    if (mapX < 0 || mapY < 0) break;
+                    if (Abs(mapX) > 255 || Abs(mapY) > 255) break;
+                    if (mapX >= WorldMap.GetLength(0) || mapY >= WorldMap.GetLength(1)) continue;
+                    if (mapX < 0 || mapY < 0) continue;
 
                     // Check if ray has hit a wall
                     if (WorldMap[mapX, mapY] > 0) hit = 1;
@@ -247,15 +249,7 @@ namespace Chromastein
                         if (!spritesToDraw.Contains(SpriteMap[mapX, mapY]))
                         {
                             // Calculate sprite distance from the player so we can render it properly
-                            float spriteDist;
-                            if (side == 0)
-                            {
-                                spriteDist = (float)((mapX - PlayerPos.X + (1 - stepX) / 2) / rayDirX);
-                            }
-                            else
-                            {
-                                spriteDist = (float)((mapY - PlayerPos.Y + (1 - stepY) / 2) / rayDirY);
-                            }
+                            float spriteDist = 0;
                             SpriteMap[mapX, mapY].ZIndex = spriteDist;
                             spritesToDraw.Add(SpriteMap[mapX, mapY]);
                         }
@@ -359,11 +353,15 @@ namespace Chromastein
             // Actually render world, this is done afterwords
             // To allow for Z-Index batching so we can render
             // Sprites properly
-            for (int i = 0; i < wallStripsToRender.Length; i++)
+            if(!FlatRender)
             {
-                Strip strip = wallStripsToRender[i];
-                strip.Texture.ColorMask = strip.Color;
-                context.DrawTexture(strip.Texture, strip.Position, strip.Scale, Vector2.Zero, 0, strip.SourceRectangle);
+                for (int i = 0; i < wallStripsToRender.Length; i++)
+                {
+                    Strip strip = wallStripsToRender[i];
+                    if (strip == null) continue;
+                    strip.Texture.ColorMask = strip.Color;
+                    context.DrawTexture(strip.Texture, strip.Position, strip.Scale, Vector2.Zero, 0, strip.SourceRectangle);
+                }
             }
 
             if (RenderSprites)
@@ -475,6 +473,22 @@ namespace Chromastein
             RotatePlayerInDir(delta, controllerRot);
         }
 
+        protected override void KeyPressed(KeyEventArgs e)
+        {
+            if (e.KeyCode == KeyCode.F) FlatRender = !FlatRender;
+            if (e.KeyCode == KeyCode.M) MiniMap = !MiniMap;
+            if (e.KeyCode == KeyCode.N) RenderSprites = !RenderSprites;
+            if (e.KeyCode == KeyCode.V) NoClip = !NoClip;
+        }
+
+        protected override void ControllerButtonPressed(ControllerButtonEventArgs e)
+        {
+            if (e.Button == ControllerButton.Menu) FlatRender = !FlatRender;
+            if (e.Button == ControllerButton.View) MiniMap = !MiniMap;
+            if (e.Button == ControllerButton.A) RenderSprites = !RenderSprites;
+            if (e.Button == ControllerButton.B) NoClip = !NoClip;
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -515,25 +529,37 @@ namespace Chromastein
         private bool CheckWallCollision(Vector2 mapPos)
         {
             if (NoClip) return false;
-            if (WorldMap[(int)(mapPos.X + PlayerSize), (int)(mapPos.Y + PlayerSize)] > 0 ||
-                WorldMap[(int)(mapPos.X - PlayerSize), (int)(mapPos.Y - PlayerSize)] > 0 ||
-                WorldMap[(int)(mapPos.X + PlayerSize), (int)(mapPos.Y - PlayerSize)] > 0 ||
-                WorldMap[(int)(mapPos.X - PlayerSize), (int)(mapPos.Y + PlayerSize)] > 0) 
+            try
             {
-                return true;
+                if (WorldMap[(int)(mapPos.X + PlayerSize), (int)(mapPos.Y + PlayerSize)] > 0 ||
+                    WorldMap[(int)(mapPos.X - PlayerSize), (int)(mapPos.Y - PlayerSize)] > 0 ||
+                    WorldMap[(int)(mapPos.X + PlayerSize), (int)(mapPos.Y - PlayerSize)] > 0 ||
+                    WorldMap[(int)(mapPos.X - PlayerSize), (int)(mapPos.Y + PlayerSize)] > 0)
+                {
+                    return true;
+                }
+            }
+            catch(IndexOutOfRangeException)
+            {
+                return false;
             }
             return false;
         }
 
         private bool CheckSpriteCollision(Vector2 mapPos)
         {
-            /*foreach (Object sprite in SpriteList)
+            if (NoClip) return false;
+            foreach (Object sprite in SpriteList)
             {
-                if (sprite.PlayerPos.X == (int)mapPos.X && sprite.PlayerPos.Y == (int)mapPos.Y && sprite.Block)
+                if (!sprite.Block) continue;
+                if ((sprite.PosX == (int)(mapPos.X + PlayerSize) && sprite.PosY == (int)(mapPos.Y + PlayerSize)) ||
+                    (sprite.PosX == (int)(mapPos.X - PlayerSize) && sprite.PosY == (int)(mapPos.Y - PlayerSize)) ||
+                    (sprite.PosX == (int)(mapPos.X + PlayerSize) && sprite.PosY == (int)(mapPos.Y - PlayerSize)) ||
+                    (sprite.PosX == (int)(mapPos.X - PlayerSize) && sprite.PosY == (int)(mapPos.Y + PlayerSize)))
                 {
                     return true;
                 }
-            }*/
+            }
             return false;
         }
 

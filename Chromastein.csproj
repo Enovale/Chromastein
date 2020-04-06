@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="F:\Documents\Chroma\Chroma.Natives\Chroma.Natives.csproj" />
-    <ProjectReference Include="F:\Documents\Chroma\Chroma\Chroma.csproj" />
+    <ProjectReference Include="..\Chroma\Chroma.Natives\Chroma.Natives.csproj" />
+    <ProjectReference Include="..\Chroma\Chroma\Chroma.csproj" />
   </ItemGroup>
 
   <ItemGroup>
