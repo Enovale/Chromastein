@@ -86,11 +86,11 @@ namespace Chromastein
         private Vector2 PlayerPos = new Vector2(22.5f, 11.5f);
         private double DirX = -1, DirY = 0;
         private double PlaneX = 0, PlaneY = 0.66;
-        private double fov = 2 * Atan(0.66 / 1.0);
-        private double PlayerMoveSpeed = 5.0;
-        private double PlayerRotSpeed = 3.0;
-        private float PlayerSize = 0.2f;
-        private double viewDist;
+        private static double fov = 2 * Atan(0.66 / 1.0);
+        private const double PlayerMoveSpeed = 5.0;
+        private const double PlayerRotSpeed = 3.0;
+        private const float PlayerSize = 0.2f;
+        private readonly double viewDist;
 
         private Texture[] WallTextures;
 
@@ -119,7 +119,7 @@ namespace Chromastein
             // 0.2 deadzone
             Controller.SetDeadZoneUniform(0, 6553);
             viewDist = (ScreenWidth / 2) / Tan(fov / 2);
-            DebugFont = new TrueTypeFont(ContentPath + "DooM.ttf", 40);
+            DebugFont = new TrueTypeFont(ContentPath + "DooM.ttf", 24);
             LoadTextures();
 
             // Load sprites
@@ -320,18 +320,18 @@ namespace Chromastein
                 else
                 {
                     // Debugging wall colors for flat renderer
-                    switch (WorldMap[mapX, mapY])
+                    color = (WorldMap[mapX, mapY]) switch
                     {
-                        case 1: color = Color.Red; break;
-                        case 2: color = Color.Green; break;
-                        case 3: color = Color.Blue; break;
-                        case 4: color = Color.Beige; break;
-                        case 5: color = Color.Aquamarine; break;
-                        case 6: color = Color.HotPink; break;
-                        case 7: color = Color.Purple; break;
-                        case 8: color = Color.Brown; break;
-                        default: color = Color.Yellow; break;
-                    }
+                        1 => Color.Red,
+                        2 => Color.Green,
+                        3 => Color.Blue,
+                        4 => Color.Beige,
+                        5 => Color.Aquamarine,
+                        6 => Color.HotPink,
+                        7 => Color.Purple,
+                        8 => Color.Brown,
+                        _ => Color.Yellow,
+                    };
 
                     // Darken the color to create perspective
                     if (side == 1)
@@ -353,7 +353,7 @@ namespace Chromastein
             // Actually render world, this is done afterwords
             // To allow for Z-Index batching so we can render
             // Sprites properly
-            if(!FlatRender)
+            if (!FlatRender)
             {
                 for (int i = 0; i < wallStripsToRender.Length; i++)
                 {
@@ -388,21 +388,19 @@ namespace Chromastein
                 {
                     for (int y = 0; y < MapHeight; y++)
                     {
-                        Color color;
                         // Debugging wall colors for flat renderer
-                        switch (WorldMap[x, y])
+                        var color = (WorldMap[x, y]) switch
                         {
-                            case 1: color = Color.Red; break;
-                            case 2: color = Color.Green; break;
-                            case 3: color = Color.Blue; break;
-                            case 4: color = Color.Beige; break;
-                            case 5: color = Color.Aquamarine; break;
-                            case 6: color = Color.HotPink; break;
-                            case 7: color = Color.Purple; break;
-                            case 8: color = Color.Brown; break;
-                            default: color = Color.Yellow; break;
-                        }
-
+                            1 => Color.Red,
+                            2 => Color.Green,
+                            3 => Color.Blue,
+                            4 => Color.Beige,
+                            5 => Color.Aquamarine,
+                            6 => Color.HotPink,
+                            7 => Color.Purple,
+                            8 => Color.Brown,
+                            _ => Color.Yellow,
+                        };
                         Vector2 tileSize = new Vector2(MinimapSize.X / MapWidth, MinimapSize.Y / MapHeight);
                         Vector2 tilePos = new Vector2(tileSize.X * x, tileSize.Y * y);
                         context.Rectangle(ShapeMode.Fill, MinimapPosition + tilePos, tileSize.X, tileSize.Y, color);
@@ -465,7 +463,10 @@ namespace Chromastein
             float controllerMoveX = Controller.GetAxisValueNormalized(0, ControllerAxis.LeftStickX);
             float controllerMoveY = -Controller.GetAxisValueNormalized(0, ControllerAxis.LeftStickY);
             float controllerRot = Controller.GetAxisValueNormalized(0, ControllerAxis.RightStickX);
-            DebugText = $"Rot: {Round(controllerRot, 3)}";
+            DebugText = "F: Flat Render\n" +
+                "M: Toggle Minimap\n" +
+                "N: Toggle Sprites\n" +
+                "V: NoClip";
             controllerMoveX = ApplyDeadZone(controllerMoveX, 0.1f);
             controllerMoveY = ApplyDeadZone(controllerMoveY, 0.1f);
             controllerRot = ApplyDeadZone(controllerRot, 0.1f);
@@ -539,7 +540,7 @@ namespace Chromastein
                     return true;
                 }
             }
-            catch(IndexOutOfRangeException)
+            catch (IndexOutOfRangeException)
             {
                 return false;
             }
@@ -565,10 +566,7 @@ namespace Chromastein
 
         private float ApplyDeadZone(float value, float deadZone)
         {
-            if(Abs(value) - deadZone > 0)
-            {
-                return value;
-            }
+            if (Abs(value) - deadZone > 0) return value;
             return 0;
         }
 
