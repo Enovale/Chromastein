@@ -115,8 +115,6 @@ namespace Chromastein
                 SpriteMap[obj.PosX, obj.PosY] = obj;
             }
 
-            // 0.2 deadzone
-            Controller.SetDeadZoneUniform(0, 6553);
             DebugFont = new TrueTypeFont(ContentPath + "DooM.ttf", 24);
             LoadTextures();
 
@@ -154,6 +152,12 @@ namespace Chromastein
                     WallTextures[(Columns * cellY) + cellX].Flush();
                 }
             }
+        }
+
+        protected override void ControllerConnected(ControllerEventArgs e)
+        {
+            // 0.2 deadzone
+            Controller.SetDeadZoneUniform(0, 6553);
         }
 
         protected override void Draw(RenderContext context)
@@ -456,9 +460,6 @@ namespace Chromastein
                 "M: Toggle Minimap\n" +
                 "N: Toggle Sprites\n" +
                 "V: NoClip";
-            controllerMoveX = ApplyDeadZone(controllerMoveX, 0.1f);
-            controllerMoveY = ApplyDeadZone(controllerMoveY, 0.1f);
-            controllerRot = ApplyDeadZone(controllerRot, 0.1f);
             MovePlayerInDir(delta, new Vector2(controllerMoveX, controllerMoveY));
             RotatePlayerInDir(delta, controllerRot);
         }
@@ -552,12 +553,5 @@ namespace Chromastein
             }
             return false;
         }
-
-        private float ApplyDeadZone(float value, float deadZone)
-        {
-            if (Abs(value) - deadZone > 0) return value;
-            return 0;
-        }
-
     }
 }
