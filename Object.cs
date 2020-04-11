@@ -57,28 +57,34 @@ namespace Chromastein
             }
         }
 
-        public void Draw(RenderContext context, Vector2 playerPos, Vector2 playerDir, Vector2 screenSize, double viewDist)
+        public void Draw(RenderContext context, Vector2 playerPos, Vector2 playerDir, Vector2 playerPlane, Vector2 screenSize)
         {
 
-            // Viewing space calculation
+            // Distance from the sprite to the player
             float dX = PosX + 0.5f - playerPos.X;
             float dY = PosY + 0.5f - playerPos.Y;
 
-            // Calculate sprite distance from player
-            double dist = Sqrt(dX * dX + dY * dY);
+            // Transform sprite with the inverse camera matrix
+            // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
+            // [               ]       =  1/(planeX*dirY-dirX*planeY) *   [                 ]
+            // [ planeY   dirY ]                                          [ -planeY  planeX ]
 
-            // Sprite angle relative to viewing angle
-            double spriteAngle = Atan2(dY, dX) - Atan2(playerDir.Y, playerDir.X);
+            double invDet = 1.0 / (playerPlane.X * playerDir.Y - playerDir.X * playerPlane.Y); // Invert for correct matrix multiplication
 
-            // Size of the sprite
-            double size = viewDist / (Cos(spriteAngle) * dist);
+            double transformX = invDet * (playerDir.Y * dX - playerDir.X * dY);
+            double transformY = invDet * (-playerPlane.Y * dX + playerPlane.X * dY); // Screen depth, Z value
 
+            int spriteScreenX = (int)((screenSize.X / 2) * (1 + transformX / transformY));
+
+            // How big the sprite is in pixels
+            int size = Abs((int)(screenSize.Y / (transformY))); // Using 'transformY' instead of the real distance prevents fisheye
+
+            // How big the sprite is relative to its usual height since I have to use scale
             double scale = size / ObjTexture.Height;
 
-            // X-position on screen
-            float x = -(float)((Tan(spriteAngle) * viewDist) + (size / 2));
+            int x = -size / 2 + spriteScreenX;
 
-            Vector2 TexPosition = new Vector2((screenSize.X / 2) + x, (float)((screenSize.Y - size) / 2));
+            Vector2 TexPosition = new Vector2(x, -size / 2 + screenSize.Y / 2);
             Vector2 TexScale = new Vector2((float)scale, (float)scale);
 
             context.DrawTexture(ObjTexture, TexPosition, TexScale, Vector2.Zero, 0);

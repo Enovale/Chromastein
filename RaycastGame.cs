@@ -5,6 +5,7 @@ using static System.Math;
 using Chroma;
 using Chroma.Input;
 using Chroma.Graphics;
+using Chroma.Graphics.Batching;
 using Chroma.Graphics.TextRendering;
 using System.Reflection;
 using System.IO;
@@ -86,11 +87,9 @@ namespace Chromastein
         private Vector2 PlayerPos = new Vector2(22.5f, 11.5f);
         private double DirX = -1, DirY = 0;
         private double PlaneX = 0, PlaneY = 0.66;
-        private static double fov = 2 * Atan(0.66 / 1.0);
         private const double PlayerMoveSpeed = 5.0;
         private const double PlayerRotSpeed = 3.0;
         private const float PlayerSize = 0.2f;
-        private readonly double viewDist;
 
         private Texture[] WallTextures;
 
@@ -118,7 +117,6 @@ namespace Chromastein
 
             // 0.2 deadzone
             Controller.SetDeadZoneUniform(0, 6553);
-            viewDist = (ScreenWidth / 2) / Tan(fov / 2);
             DebugFont = new TrueTypeFont(ContentPath + "DooM.ttf", 24);
             LoadTextures();
 
@@ -164,10 +162,7 @@ namespace Chromastein
 
             int leftRayX = 0, leftRayY = 0, rightRayX = 0, rightRayY = 0;
 
-            Strip[] wallStripsToRender;
-            wallStripsToRender = new Strip[ScreenWidth / ScreenWidthDivision + 1];
-            List<Object> spritesToDraw = new List<Object>();
-            List<bool> spritesDrawn = new List<bool>();
+            List<Object> spritesDrawn = new List<Object>();
 
             for (int x = 0; x <= ScreenWidth; x += ScreenWidthDivision)
             {
@@ -243,15 +238,36 @@ namespace Chromastein
 
                     // Check if ray has hit a wall
                     if (WorldMap[mapX, mapY] > 0) hit = 1;
-                    // Check if a sprite is in view
-                    if (SpriteMap[mapX, mapY] != null)
+                    if(RenderSprites)
                     {
-                        if (!spritesToDraw.Contains(SpriteMap[mapX, mapY]))
+                        // Check if a sprite is in view
+                        if (SpriteMap[mapX, mapY] != null)
                         {
-                            // Calculate sprite distance from the player so we can render it properly
-                            float spriteDist = 0;
-                            SpriteMap[mapX, mapY].ZIndex = spriteDist;
-                            spritesToDraw.Add(SpriteMap[mapX, mapY]);
+                            if (!spritesDrawn.Contains(SpriteMap[mapX, mapY]))
+                            {
+                                // Calculate sprite distance from the player so we can render it properly
+                                Object sprite = SpriteMap[mapX, mapY];
+                                double spriteDist;
+                                // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
+                                if (side == 0)
+                                {
+                                    spriteDist = (mapX - PlayerPos.X + (1 - stepX) / 2) / rayDirX;
+                                }
+                                else
+                                {
+                                    spriteDist = (mapY - PlayerPos.Y + (1 - stepY) / 2) / rayDirY;
+                                }
+                                int usableDist = (int)(spriteDist * 1000);
+                                sprite.ZIndex = usableDist;
+                                spritesDrawn.Add(sprite);
+                                context.Batch(() => sprite.Draw(
+                                    context,
+                                    PlayerPos,
+                                    new Vector2((float)DirX, (float)DirY),
+                                    new Vector2((float)PlaneX, (float)PlaneY),
+                                    new Vector2(ScreenWidth, ScreenHeight)
+                                    ), (int)sprite.ZIndex);
+                            }
                         }
                     }
                 }
@@ -307,15 +323,17 @@ namespace Chromastein
                 if (!FlatRender)
                 {
                     // Draw textures using strips instead of pixels
-                    // I don't know why i didn't at least try this to begin with
                     int texY = Min(drawStart, -(lineHeight - ScreenHeight) / 2);
                     Texture stripTex = WallTextures[texNum];
                     Rectangle SourceRectangle = new Rectangle(texX, 0, ScreenWidthDivision, TextureSize);
                     Vector2 Position = new Vector2(x, texY);
                     Vector2 Scale = new Vector2(1, (float)lineHeight / TextureSize);
                     Color StripColor = side == 1 ? Color.Gray : Color.White;
-                    wallStripsToRender[x] = new Strip(stripTex, StripColor, Position, Scale, SourceRectangle, (float)perpWallDist);
-                    //context.DrawTexture(stripTex, Position, Scale, Vector2.Zero, 0, SourceRectangle);
+                    int usableDist = (int)(perpWallDist * 1000);
+                    context.Batch(() => {
+                        stripTex.ColorMask = StripColor;
+                        context.DrawTexture(stripTex, Position, Scale, Vector2.Zero, 0, SourceRectangle);
+                        }, usableDist);
                 }
                 else
                 {
@@ -340,43 +358,14 @@ namespace Chromastein
                         color.G /= 2;
                         color.B /= 2;
                     }
+                    int usableDist = (int)(perpWallDist * 1000);
 
                     // Actually draw the pixels of the stripe as a vertical line
-                    DrawColorStrip(context, x, drawStart, drawEnd, color);
+                    DrawColorStrip(context, x, drawStart, drawEnd, usableDist, color);
                 }
             }
 
-            // Need to sort the strip list, then the sprite list
-            // Then iterate through them in order of ZIndex and 
-            // Render them accordingly
-
-            // Actually render world, this is done afterwords
-            // To allow for Z-Index batching so we can render
-            // Sprites properly
-            if (!FlatRender)
-            {
-                for (int i = 0; i < wallStripsToRender.Length; i++)
-                {
-                    Strip strip = wallStripsToRender[i];
-                    if (strip == null) continue;
-                    strip.Texture.ColorMask = strip.Color;
-                    context.DrawTexture(strip.Texture, strip.Position, strip.Scale, Vector2.Zero, 0, strip.SourceRectangle);
-                }
-            }
-
-            if (RenderSprites)
-            {
-                // Render sprites
-                foreach (Object sprite in spritesToDraw)
-                {
-                    sprite.Draw(context,
-                        new Vector2(PlayerPos.X, PlayerPos.Y),
-                        new Vector2((float)DirX, (float)DirY),
-                        new Vector2(ScreenWidth, ScreenHeight),
-                        viewDist
-                        );
-                };
-            }
+            context.DrawBatch(DrawOrder.FrontToBack);
 
             if (MiniMap)
             {
@@ -427,10 +416,10 @@ namespace Chromastein
             context.DrawString(DebugFont, DebugText, Vector2.Zero, (c, i, p, g) => new GlyphTransformData(p) { Color = Color.White });
         }
 
-        private void DrawColorStrip(RenderContext context, int screenX, int drawStart, int drawEnd, Color color)
+        private void DrawColorStrip(RenderContext context, int screenX, int drawStart, int drawEnd, int z, Color color)
         {
             if (drawEnd - drawStart <= 0) return;
-            context.Line(new Vector2(screenX, drawStart), new Vector2(screenX, drawEnd), color);
+            context.Batch(() => context.Line(new Vector2(screenX, drawStart), new Vector2(screenX, drawEnd), color), z);
         }
 
         protected override void Update(float delta)
