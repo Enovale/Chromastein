@@ -4,17 +4,23 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <PublishReadyToRunExclude Include="System.Collections.dll" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Chroma\Chroma.Natives\Chroma.Natives.csproj" />
     <ProjectReference Include="..\Chroma\Chroma\Chroma.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <None Update="Content\DooM.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Content\Sprites\armor.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Content\Sprites\Enemies\guard.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Content\Sprites\fuckedup.png">

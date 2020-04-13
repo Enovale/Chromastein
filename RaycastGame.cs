@@ -10,6 +10,9 @@ using Chroma.Graphics.TextRendering;
 using System.Reflection;
 using System.IO;
 using Chroma.Input.EventArgs;
+using System.Numerics;
+using System.Drawing;
+using Color = Chroma.Graphics.Color;
 
 namespace Chromastein
 {
@@ -60,6 +63,11 @@ namespace Chromastein
             new Object(8, 22, true, Object.Type.Plant),
             new Object(1, 22, true, Object.Type.Table),
         };
+
+        public Enemy[] EnemyList = new Enemy[]
+        {
+            new Enemy(11, 11, Enemy.EnemyType.Soldier)
+        };
         #endregion
 
         #region Meta Variables
@@ -75,6 +83,7 @@ namespace Chromastein
         public static int ScreenHeightDivision = 1;
 
         public Object[,] SpriteMap;
+        public Enemy[,] EnemyMap;
 
         private TrueTypeFont DebugFont;
         private string DebugText;
@@ -99,6 +108,7 @@ namespace Chromastein
             int DisplayHeight = Graphics.FetchDesktopDisplayInfo(0).Height; // Why the hell are these floats
             ScreenCenter = new Vector2(DisplayWidth / 2, DisplayHeight / 2);
             Graphics.VSyncEnabled = false;
+            Graphics.LimitFramerate = false;
 
             ContentPath = Path.GetFullPath("./Content") + "/";
 
@@ -114,6 +124,11 @@ namespace Chromastein
             {
                 SpriteMap[obj.PosX, obj.PosY] = obj;
             }
+            EnemyMap = new Enemy[MapWidth, MapHeight];
+            foreach (Enemy obj in EnemyList)
+            {
+                EnemyMap[obj.PosX, obj.PosY] = obj;
+            }
 
             DebugFont = new TrueTypeFont(ContentPath + "DooM.ttf", 24);
             LoadTextures();
@@ -122,6 +137,12 @@ namespace Chromastein
             foreach (Object sprite in SpriteList)
             {
                 sprite.InitContent(ContentPath);
+            }
+
+            // Load enemies
+            foreach (Enemy enemy in EnemyList)
+            {
+                enemy.InitContent(ContentPath);
             }
         }
 
@@ -167,6 +188,7 @@ namespace Chromastein
             int leftRayX = 0, leftRayY = 0, rightRayX = 0, rightRayY = 0;
 
             List<Object> spritesDrawn = new List<Object>();
+            List<Enemy> enemiesDrawn = new List<Enemy>();
 
             for (int x = 0; x <= ScreenWidth; x += ScreenWidthDivision)
             {
@@ -273,6 +295,35 @@ namespace Chromastein
                                     ), (int)sprite.ZIndex);
                             }
                         }
+                        // Check if an enemy is in view
+                        if (EnemyMap[mapX, mapY] != null)
+                        {
+                            if (!enemiesDrawn.Contains(EnemyMap[mapX, mapY]))
+                            {
+                                // Calculate sprite distance from the player so we can render it properly
+                                Enemy enemy = EnemyMap[mapX, mapY];
+                                double spriteDist;
+                                // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
+                                if (side == 0)
+                                {
+                                    spriteDist = (mapX - PlayerPos.X + (1 - stepX) / 2) / rayDirX;
+                                }
+                                else
+                                {
+                                    spriteDist = (mapY - PlayerPos.Y + (1 - stepY) / 2) / rayDirY;
+                                }
+                                int usableDist = (int)(spriteDist * 1000);
+                                enemy.ZIndex = usableDist;
+                                enemiesDrawn.Add(enemy);
+                                context.Batch(() => enemy.Draw(
+                                    context,
+                                    PlayerPos,
+                                    new Vector2((float)DirX, (float)DirY),
+                                    new Vector2((float)PlaneX, (float)PlaneY),
+                                    new Vector2(ScreenWidth, ScreenHeight)
+                                    ), (int)enemy.ZIndex);
+                            }
+                        }
                     }
                 }
 
@@ -335,7 +386,7 @@ namespace Chromastein
                     Color StripColor = side == 1 ? Color.Gray : Color.White;
                     int usableDist = (int)(perpWallDist * 1000);
                     context.Batch(() => {
-                        stripTex.ColorMask = StripColor;
+                        if(!stripTex.ColorMask.Equals(StripColor)) stripTex.ColorMask = StripColor;
                         context.DrawTexture(stripTex, Position, Scale, Vector2.Zero, 0, SourceRectangle);
                         }, usableDist);
                 }
@@ -428,6 +479,12 @@ namespace Chromastein
 
         protected override void Update(float delta)
         {
+
+            foreach(Enemy enemy in EnemyList)
+            {
+                enemy.Update(delta, PlayerPos);
+            }
+
             if (Keyboard.IsKeyDown(KeyCode.W))
             {
                 MovePlayerInDir(delta, new Vector2(0, 1));
