@@ -21,18 +21,28 @@ namespace Chromastein
 
         public EnemyType ObjType;
         public Spritesheet EnemySheet;
-        public int PosX, PosY;
+        public float PosX, PosY;
+        public double Rotation;
+        public float Speed;
+        /// <summary>
+        /// Really should refactor this to be dynamic
+        /// </summary>
+        public int WalkFrames;
+        // Same thing
+        public int WalkTime;
         /// <summary>
         /// Animation state for the spritesheet
         /// </summary>
         public int EnemyState = 0;
         public float ZIndex = 0;
 
+        private float oldSpeed;
+
         public Enemy(int positionX, int positionY, EnemyType thisType)
         {
             ObjType = thisType;
-            PosY = positionX;
-            PosX = positionY;
+            PosY = positionX + 0.5f;
+            PosX = positionY + 0.5f;
         }
 
         public virtual void InitContent(string contentRoot)
@@ -42,11 +52,18 @@ namespace Chromastein
             {
                 case EnemyType.Soldier:
                     EnemySheet = new Spritesheet(contentRoot + "guard.png");
+                    WalkFrames = 4;
+                    WalkTime = 1000;
+                    Speed = 1;
                     break;
                 default:
                     EnemySheet = new Spritesheet(contentRoot + "fuckedup.png");
+                    WalkFrames = 0;
+                    WalkTime = 1000;
+                    Speed = 0.1f;
                     break;
             }
+            oldSpeed = Speed;
             EnemySheet.CellWidth = 64;
             EnemySheet.CellHeight = 64;
         }
@@ -55,8 +72,8 @@ namespace Chromastein
         {
 
             // Distance from the sprite to the player
-            float dX = PosX + 0.5f - playerPos.X;
-            float dY = PosY + 0.5f - playerPos.Y;
+            float dX = PosX - playerPos.X;
+            float dY = PosY - playerPos.Y;
 
             // Transform sprite with the inverse camera matrix
             // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
@@ -78,10 +95,12 @@ namespace Chromastein
 
             int x = -size / 2 + spriteScreenX;
 
-            Vector2 TexPosition = new Vector2(x, -size / 2 + screenSize.Y / 2);
-            Vector2 TexScale = new Vector2((float)scale, (float)scale);
-
-            EnemySheet.Draw(context, EnemyState, TexPosition, TexScale, Vector2.Zero, 0);
+            if (transformY > 0 && (x + EnemySheet.CellWidth * scale) > 0 && x < screenSize.X)
+            {
+                Vector2 TexPosition = new Vector2(x, -size / 2 + screenSize.Y / 2);
+                Vector2 TexScale = new Vector2((float)scale, (float)scale);
+                EnemySheet.Draw(context, EnemyState, TexPosition, TexScale, Vector2.Zero, 0);
+            }
         }
 
         public virtual void Update(float deltaTime, Vector2 playerPos)
@@ -90,11 +109,37 @@ namespace Chromastein
             float dY = playerPos.Y - PosY;
 
             float dist = (float)Sqrt(dX * dX + dY * dY);
-            if(dist > 4)
+            if (dist > 4)
             {
-                Console.WriteLine(dist);
+                double angle = Atan2(dY, dX);
+                Rotation = angle;
+                Speed = oldSpeed;
+                EnemyState = (int)Floor((float)(DateTime.Now.Millisecond % WalkTime / (WalkTime / WalkFrames))) + 1;
+                MoveEnemy(deltaTime);
+            }
+            else
+            {
+                EnemyState = 0;
+                Speed = 0;
             }
         }
 
+        private void MoveEnemy(float deltaTime)
+        {
+            // Speed of player's movement
+            float moveSpeed = deltaTime * Speed; // The constant value is in squares/second
+            Vector2 newEnemyPos = new Vector2(PosX, PosY);
+            Vector2 enemyForward = new Vector2((float)Cos(Rotation), (float)Sin(Rotation));
+            Vector2 enemyRight = new Vector2((float)Sin(Rotation), (float)-Cos(Rotation));
+            newEnemyPos += enemyForward * moveSpeed;
+            Vector2 xDir = new Vector2(
+                newEnemyPos.X,
+                PosY);
+            Vector2 yDir = new Vector2(
+                PosX,
+                newEnemyPos.Y);
+            PosX = newEnemyPos.X;
+            PosY = newEnemyPos.Y;
+        }
     }
 }

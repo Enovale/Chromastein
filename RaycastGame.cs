@@ -83,7 +83,6 @@ namespace Chromastein
         public static int ScreenHeightDivision = 1;
 
         public Object[,] SpriteMap;
-        public Enemy[,] EnemyMap;
 
         private TrueTypeFont DebugFont;
         private string DebugText;
@@ -123,11 +122,6 @@ namespace Chromastein
             foreach (Object obj in SpriteList)
             {
                 SpriteMap[obj.PosX, obj.PosY] = obj;
-            }
-            EnemyMap = new Enemy[MapWidth, MapHeight];
-            foreach (Enemy obj in EnemyList)
-            {
-                EnemyMap[obj.PosX, obj.PosY] = obj;
             }
 
             DebugFont = new TrueTypeFont(ContentPath + "DooM.ttf", 24);
@@ -188,7 +182,6 @@ namespace Chromastein
             int leftRayX = 0, leftRayY = 0, rightRayX = 0, rightRayY = 0;
 
             List<Object> spritesDrawn = new List<Object>();
-            List<Enemy> enemiesDrawn = new List<Enemy>();
 
             for (int x = 0; x <= ScreenWidth; x += ScreenWidthDivision)
             {
@@ -264,7 +257,7 @@ namespace Chromastein
 
                     // Check if ray has hit a wall
                     if (WorldMap[mapX, mapY] > 0) hit = 1;
-                    if(RenderSprites)
+                    if (RenderSprites)
                     {
                         // Check if a sprite is in view
                         if (SpriteMap[mapX, mapY] != null)
@@ -293,35 +286,6 @@ namespace Chromastein
                                     new Vector2((float)PlaneX, (float)PlaneY),
                                     new Vector2(ScreenWidth, ScreenHeight)
                                     ), (int)sprite.ZIndex);
-                            }
-                        }
-                        // Check if an enemy is in view
-                        if (EnemyMap[mapX, mapY] != null)
-                        {
-                            if (!enemiesDrawn.Contains(EnemyMap[mapX, mapY]))
-                            {
-                                // Calculate sprite distance from the player so we can render it properly
-                                Enemy enemy = EnemyMap[mapX, mapY];
-                                double spriteDist;
-                                // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
-                                if (side == 0)
-                                {
-                                    spriteDist = (mapX - PlayerPos.X + (1 - stepX) / 2) / rayDirX;
-                                }
-                                else
-                                {
-                                    spriteDist = (mapY - PlayerPos.Y + (1 - stepY) / 2) / rayDirY;
-                                }
-                                int usableDist = (int)(spriteDist * 1000);
-                                enemy.ZIndex = usableDist;
-                                enemiesDrawn.Add(enemy);
-                                context.Batch(() => enemy.Draw(
-                                    context,
-                                    PlayerPos,
-                                    new Vector2((float)DirX, (float)DirY),
-                                    new Vector2((float)PlaneX, (float)PlaneY),
-                                    new Vector2(ScreenWidth, ScreenHeight)
-                                    ), (int)enemy.ZIndex);
                             }
                         }
                     }
@@ -385,10 +349,11 @@ namespace Chromastein
                     Vector2 Scale = new Vector2(1, (float)lineHeight / TextureSize);
                     Color StripColor = side == 1 ? Color.Gray : Color.White;
                     int usableDist = (int)(perpWallDist * 1000);
-                    context.Batch(() => {
-                        if(!stripTex.ColorMask.Equals(StripColor)) stripTex.ColorMask = StripColor;
+                    context.Batch(() =>
+                    {
+                        if (!stripTex.ColorMask.Equals(StripColor)) stripTex.ColorMask = StripColor;
                         context.DrawTexture(stripTex, Position, Scale, Vector2.Zero, 0, SourceRectangle);
-                        }, usableDist);
+                    }, usableDist);
                 }
                 else
                 {
@@ -417,6 +382,28 @@ namespace Chromastein
 
                     // Actually draw the pixels of the stripe as a vertical line
                     DrawColorStrip(context, x, drawStart, drawEnd, usableDist, color);
+                }
+            }
+
+            if (RenderSprites)
+            {
+                foreach (Enemy enemy in EnemyList)
+                {
+                    // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
+                    float dX = PlayerPos.X - enemy.PosX;
+                    float dY = PlayerPos.Y - enemy.PosY;
+                    // Calculate sprite distance from the player so we can render it properly
+                    double spriteDist;
+                    spriteDist = Sqrt(dX * dX + dY * dY);
+                    int usableDist = (int)(spriteDist * 1000);
+                    enemy.ZIndex = usableDist;
+                    context.Batch(() => enemy.Draw(
+                        context,
+                        PlayerPos,
+                        new Vector2((float)DirX, (float)DirY),
+                        new Vector2((float)PlaneX, (float)PlaneY),
+                        new Vector2(ScreenWidth, ScreenHeight)
+                        ), (int)enemy.ZIndex);
                 }
             }
 
@@ -480,7 +467,7 @@ namespace Chromastein
         protected override void Update(float delta)
         {
 
-            foreach(Enemy enemy in EnemyList)
+            foreach (Enemy enemy in EnemyList)
             {
                 enemy.Update(delta, PlayerPos);
             }
@@ -538,10 +525,11 @@ namespace Chromastein
         }
 
         /// <summary>
-        /// 
+        /// Moves the player based on a vector direction.
+        /// E.G (0, 1) is up, (1, 0) is right (I think lmao)
         /// </summary>
-        /// <param name="deltaTime"></param>
-        /// <param name="direction"></param>
+        /// <param name="deltaTime">Delta time</param>
+        /// <param name="direction">Aforementioned vector direction</param>
         private void MovePlayerInDir(float deltaTime, Vector2 direction)
         {
             // Speed of player's movement
