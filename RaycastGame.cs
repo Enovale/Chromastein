@@ -66,11 +66,16 @@ namespace Chromastein
 
         public Enemy[] EnemyList = new Enemy[]
         {
-            new Enemy(11, 11, Enemy.EnemyType.Soldier)
+            new Enemy(11, 11, Enemy.EnemyType.Soldier),
+            new Enemy(6, 11, Enemy.EnemyType.Soldier),
+            new Enemy(3, 4, Enemy.EnemyType.Boss),
         };
         #endregion
 
         #region Meta Variables
+
+        public static RaycastGame Instance;
+
         public int MapWidth;
         public int MapHeight;
         public int ScreenWidth = 1280;
@@ -103,6 +108,7 @@ namespace Chromastein
 
         public RaycastGame()
         {
+            Instance = this;
             int DisplayWidth = Graphics.FetchDesktopDisplayInfo(0).Width; // Why the hell are these floats
             int DisplayHeight = Graphics.FetchDesktopDisplayInfo(0).Height; // Why the hell are these floats
             ScreenCenter = new Vector2(DisplayWidth / 2, DisplayHeight / 2);
@@ -412,7 +418,7 @@ namespace Chromastein
             if (MiniMap)
             {
                 // Move these to meta variables later, im tired
-                Vector2 MinimapSize = new Vector2(300, 200);
+                Vector2 MinimapSize = new Vector2(300, 300);
                 Vector2 MinimapPosition = new Vector2(ScreenWidth - MinimapSize.X, 0);
                 // Render minimap
                 for (int x = 0; x < MapWidth; x++)
@@ -420,7 +426,7 @@ namespace Chromastein
                     for (int y = 0; y < MapHeight; y++)
                     {
                         // Debugging wall colors for flat renderer
-                        var color = (WorldMap[x, y]) switch
+                        var color = (WorldMap[y, x]) switch
                         {
                             1 => Color.Red,
                             2 => Color.Green,
@@ -440,18 +446,26 @@ namespace Chromastein
 
                 Vector2 tileRefSize = new Vector2(MinimapSize.X / MapWidth, MinimapSize.Y / MapHeight);
                 Vector2 playerDotSize = tileRefSize / 2;
-                Vector2 playerDotPos = new Vector2(tileRefSize.X * PlayerPos.X, tileRefSize.Y * PlayerPos.Y);
+                Vector2 playerDotPos = new Vector2(tileRefSize.X * PlayerPos.Y, tileRefSize.Y * PlayerPos.X);
                 playerDotPos -= playerDotSize / 2;
                 context.Rectangle(ShapeMode.Fill, MinimapPosition + playerDotPos, playerDotSize.X, playerDotSize.Y, Color.Red);
 
                 context.Line(MinimapPosition + playerDotPos + (playerDotSize / 2),
-                    MinimapPosition + new Vector2(tileRefSize.X * leftRayX, tileRefSize.Y * leftRayY),
+                    MinimapPosition + new Vector2(tileRefSize.X * leftRayY, tileRefSize.Y * leftRayX),
                     Color.Red
                     );
                 context.Line(MinimapPosition + playerDotPos + (playerDotSize / 2),
-                    MinimapPosition + new Vector2(tileRefSize.X * rightRayX, tileRefSize.Y * rightRayY),
+                    MinimapPosition + new Vector2(tileRefSize.X * rightRayY, tileRefSize.Y * rightRayX),
                     Color.Red
                     );
+
+                foreach(Enemy enemy in EnemyList)
+                {
+                    Vector2 enemyDotSize = tileRefSize / 2;
+                    Vector2 enemyDotPos = new Vector2(tileRefSize.X * enemy.PosY, tileRefSize.Y * enemy.PosX);
+                    enemyDotPos -= enemyDotSize / 2;
+                    context.Rectangle(ShapeMode.Fill, MinimapPosition + enemyDotPos, enemyDotSize.X, enemyDotSize.Y, Color.LimeGreen);
+                }
             }
 
             DebugText = $"{Window.FPS}FPS\n" + DebugText;

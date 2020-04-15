@@ -24,6 +24,7 @@ namespace Chromastein
         public float PosX, PosY;
         public double Rotation;
         public float Speed;
+        public float Size;
         /// <summary>
         /// Really should refactor this to be dynamic
         /// </summary>
@@ -55,12 +56,14 @@ namespace Chromastein
                     WalkFrames = 4;
                     WalkTime = 1000;
                     Speed = 1;
+                    Size = 0.2f;
                     break;
                 default:
-                    EnemySheet = new Spritesheet(contentRoot + "fuckedup.png");
+                    EnemySheet = new Spritesheet(contentRoot + "../fuckedup.png");
                     WalkFrames = 0;
                     WalkTime = 1000;
                     Speed = 0.1f;
+                    Size = 0;
                     break;
             }
             oldSpeed = Speed;
@@ -114,7 +117,9 @@ namespace Chromastein
                 double angle = Atan2(dY, dX);
                 Rotation = angle;
                 Speed = oldSpeed;
-                EnemyState = (int)Floor((float)(DateTime.Now.Millisecond % WalkTime / (WalkTime / WalkFrames))) + 1;
+                if(WalkFrames != 0)
+                    EnemyState = (int)Floor(
+                        (float)(DateTime.Now.Millisecond % WalkTime / (WalkTime / WalkFrames))) + 1;
                 MoveEnemy(deltaTime);
             }
             else
@@ -138,8 +143,44 @@ namespace Chromastein
             Vector2 yDir = new Vector2(
                 PosX,
                 newEnemyPos.Y);
-            PosX = newEnemyPos.X;
-            PosY = newEnemyPos.Y;
+            if (!CheckWallCollision(xDir) && !CheckSpriteCollision(xDir)) PosX = newEnemyPos.X;
+            if (!CheckWallCollision(yDir) && !CheckSpriteCollision(yDir)) PosY = newEnemyPos.Y;
+        }
+
+        private bool CheckWallCollision(Vector2 mapPos)
+        {
+            int[,] WorldMap = RaycastGame.Instance.WorldMap;
+            try
+            {
+                if (WorldMap[(int)(mapPos.X + Size), (int)(mapPos.Y + Size)] > 0 ||
+                    WorldMap[(int)(mapPos.X - Size), (int)(mapPos.Y - Size)] > 0 ||
+                    WorldMap[(int)(mapPos.X + Size), (int)(mapPos.Y - Size)] > 0 ||
+                    WorldMap[(int)(mapPos.X - Size), (int)(mapPos.Y + Size)] > 0)
+                {
+                    return true;
+                }
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return false;
+            }
+            return false;
+        }
+
+        private bool CheckSpriteCollision(Vector2 mapPos)
+        {
+            foreach (Object sprite in RaycastGame.Instance.SpriteList)
+            {
+                if (!sprite.Block) continue;
+                if ((sprite.PosX == (int)(mapPos.X + Size) && sprite.PosY == (int)(mapPos.Y + Size)) ||
+                    (sprite.PosX == (int)(mapPos.X - Size) && sprite.PosY == (int)(mapPos.Y - Size)) ||
+                    (sprite.PosX == (int)(mapPos.X + Size) && sprite.PosY == (int)(mapPos.Y - Size)) ||
+                    (sprite.PosX == (int)(mapPos.X - Size) && sprite.PosY == (int)(mapPos.Y + Size)))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
