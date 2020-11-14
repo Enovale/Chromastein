@@ -8,10 +8,6 @@
   <ItemGroup>
     <PackageReference Include="Chroma" Version="0.25.0" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <PublishReadyToRunExclude Include="System.Collections.dll" />
-  </ItemGroup>
   <ItemGroup>
     <None Update="Content\DooM.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

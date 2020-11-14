@@ -4,10 +4,6 @@ namespace Chromastein
 {
     class Program
     {
-        static void Main(string[] args)
-        {
-            RaycastGame game = new RaycastGame();
-            game.Run();
-        }
+        static void Main(string[] args) => new RaycastGame().Run();
     }
 }

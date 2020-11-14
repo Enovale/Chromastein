@@ -60,10 +60,12 @@ namespace Chromastein
 
         public void Draw(RenderContext context, Vector2 playerPos, Vector2 playerDir, Vector2 playerPlane, Vector2 screenSize)
         {
-
+            float realPosX = PosX + 0.5f;
+            float realPosY = PosY + 0.5f;
+            
             // Distance from the sprite to the player
-            float dX = PosX + 0.5f - playerPos.X;
-            float dY = PosY + 0.5f - playerPos.Y;
+            float dX = realPosX - playerPos.X;
+            float dY = realPosY - playerPos.Y;
 
             // Transform sprite with the inverse camera matrix
             // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
@@ -81,14 +83,16 @@ namespace Chromastein
             int size = Abs((int)(screenSize.Y / (transformY))); // Using 'transformY' instead of the real distance prevents fisheye
 
             // How big the sprite is relative to its usual height since I have to use scale
-            double scale = size / ObjTexture.Height;
+            double scale = (float)size / ObjTexture.Height;
 
             int x = -size / 2 + spriteScreenX;
 
-            Vector2 TexPosition = new Vector2(x, -size / 2 + screenSize.Y / 2);
-            Vector2 TexScale = new Vector2((float)scale, (float)scale);
-
-            context.DrawTexture(ObjTexture, TexPosition, TexScale, Vector2.Zero, 0);
+            if (transformY > 0 && (x + ObjTexture.Width * scale) > 0 && x < screenSize.X)
+            {
+                Vector2 TexPosition = new Vector2(x, -size / 2 + screenSize.Y / 2);
+                Vector2 TexScale = new Vector2((float)scale, (float)scale);
+                context.DrawTexture(ObjTexture, TexPosition, TexScale, Vector2.Zero, 0);
+            }
         }
 
         public void Update(float deltaTime)

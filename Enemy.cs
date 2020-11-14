@@ -73,7 +73,6 @@ namespace Chromastein
 
         public virtual void Draw(RenderContext context, Vector2 playerPos, Vector2 playerDir, Vector2 playerPlane, Vector2 screenSize)
         {
-
             // Distance from the sprite to the player
             float dX = PosX - playerPos.X;
             float dY = PosY - playerPos.Y;
@@ -94,7 +93,7 @@ namespace Chromastein
             int size = Abs((int)(screenSize.Y / (transformY))); // Using 'transformY' instead of the real distance prevents fisheye
 
             // How big the sprite is relative to its usual height since I have to use scale
-            double scale = size / EnemySheet.Texture.Height;
+            double scale = (float)size / EnemySheet.Texture.Height;
 
             int x = -size / 2 + spriteScreenX;
 
