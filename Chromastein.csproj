@@ -2,16 +2,15 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Chroma" Version="0.25.0" />
+  </ItemGroup>
   
   <ItemGroup>
     <PublishReadyToRunExclude Include="System.Collections.dll" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Chroma\Chroma.Natives\Chroma.Natives.csproj" />
-    <ProjectReference Include="..\Chroma\Chroma\Chroma.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Content\DooM.ttf">

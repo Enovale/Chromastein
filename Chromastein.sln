@@ -5,10 +5,6 @@ VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chromastein", "Chromastein.csproj", "{C037220C-B59E-41D3-9349-56B8CD437189}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chroma", "..\Chroma\Chroma\Chroma.csproj", "{1AD38083-6C7C-482B-99C4-360D9BDE39CD}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chroma.Natives", "..\Chroma\Chroma.Natives\Chroma.Natives.csproj", "{15FFD77B-4477-4032-8037-14DA0B68748E}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9551285A-B967-4A70-8E8B-39A6357BAD29}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -24,14 +20,6 @@ Global
 		{C037220C-B59E-41D3-9349-56B8CD437189}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C037220C-B59E-41D3-9349-56B8CD437189}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C037220C-B59E-41D3-9349-56B8CD437189}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1AD38083-6C7C-482B-99C4-360D9BDE39CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1AD38083-6C7C-482B-99C4-360D9BDE39CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1AD38083-6C7C-482B-99C4-360D9BDE39CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1AD38083-6C7C-482B-99C4-360D9BDE39CD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{15FFD77B-4477-4032-8037-14DA0B68748E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{15FFD77B-4477-4032-8037-14DA0B68748E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{15FFD77B-4477-4032-8037-14DA0B68748E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{15FFD77B-4477-4032-8037-14DA0B68748E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

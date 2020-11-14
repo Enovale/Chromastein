@@ -9,10 +9,10 @@ using Chroma.Graphics.Batching;
 using Chroma.Graphics.TextRendering;
 using System.Reflection;
 using System.IO;
-using Chroma.Input.EventArgs;
 using System.Numerics;
 using System.Drawing;
 using Color = Chroma.Graphics.Color;
+using Chroma.Diagnostics;
 
 namespace Chromastein
 {
@@ -109,18 +109,17 @@ namespace Chromastein
         public RaycastGame()
         {
             Instance = this;
-            int DisplayWidth = Graphics.FetchDesktopDisplayInfo(0).Width; // Why the hell are these floats
-            int DisplayHeight = Graphics.FetchDesktopDisplayInfo(0).Height; // Why the hell are these floats
+            int DisplayWidth = Graphics.FetchDisplay(0).Bounds.Width; // Why the hell are these floats
+            int DisplayHeight = Graphics.FetchDisplay(0).Bounds.Height; // Why the hell are these floats
             ScreenCenter = new Vector2(DisplayWidth / 2, DisplayHeight / 2);
-            Graphics.VSyncEnabled = false;
-            Graphics.LimitFramerate = false;
+            Graphics.VerticalSyncMode = VerticalSyncMode.None;
+            GraphicsManager.LimitFramerate = false;
 
             ContentPath = Path.GetFullPath("./Content") + "/";
 
-            Window.Properties.Width = ScreenWidth;
-            Window.Properties.Height = ScreenHeight;
-            Window.CenterScreen();
-            Window.Properties.Position = new Vector2(Window.Properties.Position.X, Max(0, Window.Properties.Position.Y));
+            Window.Size = new Size(ScreenWidth, ScreenHeight);
+            Window.CenterOnScreen();
+            Window.Position = new Vector2(Max(0, Window.Position.X), Max(0, Window.Position.Y));
 
             MapWidth = WorldMap.GetLength(0);
             MapHeight = WorldMap.GetLength(1);
@@ -468,7 +467,7 @@ namespace Chromastein
                 }
             }
 
-            DebugText = $"{Window.FPS}FPS\n" + DebugText;
+            DebugText = $"{PerformanceCounter.FPS} FPS\n" + DebugText;
             context.DrawString(DebugFont, DebugText, Vector2.Zero, (c, i, p, g) => new GlyphTransformData(p) { Color = Color.White });
         }
 
