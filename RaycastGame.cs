@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using static System.Math;
 using Chroma;
 using Chroma.Input;
 using Chroma.Graphics;
 using Chroma.Graphics.Batching;
 using Chroma.Graphics.TextRendering;
-using System.Reflection;
 using System.IO;
 using System.Numerics;
 using System.Drawing;
 using Color = Chroma.Graphics.Color;
 using Chroma.Diagnostics;
+using Chroma.Graphics.TextRendering.TrueType;
+using Chroma.Input.GameControllers;
 
 namespace Chromastein
 {
@@ -113,7 +113,7 @@ namespace Chromastein
             int DisplayHeight = Graphics.FetchDisplay(0).Bounds.Height; // Why the hell are these floats
             ScreenCenter = new Vector2(DisplayWidth / 2, DisplayHeight / 2);
             Graphics.VerticalSyncMode = VerticalSyncMode.None;
-            GraphicsManager.LimitFramerate = false;
+            Graphics.LimitFramerate = false;
 
             ContentPath = Path.GetFullPath("./Content") + "/";
 
@@ -161,8 +161,10 @@ namespace Chromastein
                     {
                         for (int texY = 0; texY < TextureSize; texY++)
                         {
-                            Color wallPixel = allWalls.GetPixel(((cellX * TextureSize) + texX),
-                                ((cellY * TextureSize) + texY));
+                            Color wallPixel = allWalls.GetPixel(cellX * TextureSize + texX,
+                                cellY * TextureSize + texY);
+                            // TODO: Workaround for chroma edge case, remove this line when fixed
+                            wallPixel = new Color(wallPixel.A, wallPixel.B, wallPixel.G, wallPixel.R);
                             WallTextures[(Columns * cellY) + cellX].SetPixel(
                                 texX, texY,
                                 wallPixel
@@ -177,7 +179,7 @@ namespace Chromastein
         protected override void ControllerConnected(ControllerEventArgs e)
         {
             // 0.2 deadzone
-            Controller.SetDeadZoneUniform(0, 6553);
+            Controller.SetDeadZoneAllAxes(0, 6553);
         }
 
         protected override void Draw(RenderContext context)
@@ -468,7 +470,7 @@ namespace Chromastein
             }
 
             DebugText = $"{PerformanceCounter.FPS} FPS\n" + DebugText;
-            context.DrawString(DebugFont, DebugText, Vector2.Zero, (c, i, p, g) => new GlyphTransformData(p) { Color = Color.White });
+            context.DrawString(DebugFont, DebugText, Vector2.Zero, (c, i, p, g) => new GlyphTransformData() { Color = Color.White });
         }
 
         private void DrawColorStrip(RenderContext context, int screenX, int drawStart, int drawEnd, int z, Color color)
